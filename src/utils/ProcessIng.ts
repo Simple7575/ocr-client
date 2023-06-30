@@ -1,12 +1,8 @@
 import cv from "@techstark/opencv-js";
-
-type ATR = {
-    maxValue: number;
-    adaptiveMethod: any;
-    thresholdType: any;
-    blockSize: number;
-    C: number;
-};
+// types
+import { type ATRType } from "@/app/(components)/ATRinputs";
+import { type BLFtype } from "@/app/(components)/BLFinputs";
+import { type STRType } from "@/app/(components)/STRinputs";
 
 export class ProcessImg {
     constructor(private srcImg: cv.Mat) {}
@@ -33,17 +29,17 @@ export class ProcessImg {
         }
     }
 
-    public bilateralImg(src: cv.Mat = this.srcImg, BL: any) {
+    public bilateralImg(src: cv.Mat, BLF: BLFtype) {
         try {
             const dst = new cv.Mat();
-            cv.bilateralFilter(src, dst, BL.D, BL.sigmaColor, BL.sigmaSpace, cv.BORDER_DEFAULT);
+            cv.bilateralFilter(src, dst, BLF.D, BLF.sigmaColor, BLF.sigmaSpace, cv.BORDER_DEFAULT);
             return dst;
         } catch (error) {
             console.error(error);
         }
     }
 
-    public imgGrey(src: cv.Mat = this.srcImg) {
+    public greyedImg(src: cv.Mat = this.srcImg) {
         try {
             const dst = new cv.Mat();
             cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
@@ -53,23 +49,26 @@ export class ProcessImg {
         }
     }
 
-    public adaptiveTImg(src: cv.Mat = this.srcImg, ATR: ATR) {
+    public simpleThreshold = (src: cv.Mat, STR: STRType) => {
         try {
             const dst = new cv.Mat();
-            const greyed = new cv.Mat();
-            cv.cvtColor(src, greyed, cv.COLOR_RGBA2GRAY, 0);
+            cv.threshold(src, dst, STR.thresh, STR.maxValue, STR.thresholdType);
+            return dst;
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    public adaptiveTImg(src: cv.Mat, ATR: ATRType) {
+        try {
+            const dst = new cv.Mat();
             // prettier-ignore
-            cv.adaptiveThreshold( greyed, dst, ATR.maxValue, cv.ADAPTIVE_THRESH_GAUSSIAN_C, Number(ATR.thresholdType), Number(ATR.blockSize), ATR.C );
-            greyed.delete();
+            cv.adaptiveThreshold( src, dst, ATR.maxValue, Number(ATR.adaptiveMethod), Number(ATR.thresholdType), Number(ATR.blockSize), ATR.C );
             return dst;
         } catch (error) {
             console.error(error);
         }
     }
-
-    public simpleTHold = () => {
-        // cv.threshold(mat, dst, TR.thresh, TR.maxValue, cv.THRESH_BINARY);
-    };
 
     public detectEdges = () => {
         // detect edges using Canny

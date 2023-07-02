@@ -68,7 +68,7 @@ export default function ATRinputs({ ATR, handleATRchange }: Props) {
             <label className="flex flex-col" htmlFor="ATR-adaptiveMethod">
                 <span className="text-sm text-neutral-content">{`Adaptive Method: ${ATR.adaptiveMethod}`}</span>
                 <select
-                    className="select select-sm select-secondary w-full max-w-xs"
+                    className="select select-xs select-secondary w-full max-w-xs"
                     name="ATR-adaptiveMethod"
                     id="ATR-adaptiveMethod"
                     value={ATR.adaptiveMethod}
@@ -81,7 +81,7 @@ export default function ATRinputs({ ATR, handleATRchange }: Props) {
             <label className="flex flex-col" htmlFor="ATR-thresholdType">
                 <span className="text-sm text-neutral-content">{`Threshold Type: ${ATR.thresholdType}`}</span>
                 <select
-                    className="select select-sm select-secondary w-full max-w-xs"
+                    className="select select-xs select-secondary w-full max-w-xs"
                     name="ATR-thresholdType"
                     id="ATR-thresholdType"
                     value={ATR.thresholdType}

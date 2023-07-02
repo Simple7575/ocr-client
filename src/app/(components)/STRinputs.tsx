@@ -68,7 +68,7 @@ export default function STRinputs({ STR, handleSTRchange }: Props) {
             <label className="flex flex-col" htmlFor="STR-thresholdType">
                 <span className="text-sm text-neutral-content">{`Threshold Type: ${STR.thresholdType}`}</span>
                 <select
-                    className="select select-sm select-secondary w-full max-w-xs"
+                    className="select select-xs select-secondary w-full max-w-xs"
                     name="STR-thresholdType"
                     id="STR-thresholdType"
                     value={STR.thresholdType}

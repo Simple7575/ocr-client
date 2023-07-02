@@ -9,6 +9,8 @@ interface Props {
     setIsResized: Dispatch<SetStateAction<boolean>>;
     TRtype: string;
     setTRtype: Dispatch<SetStateAction<string>>;
+    isGreyed: boolean;
+    setIsGreyed: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function Checkboxes({
@@ -20,6 +22,8 @@ export default function Checkboxes({
     setIsResized,
     TRtype,
     setTRtype,
+    isGreyed,
+    setIsGreyed,
 }: Props) {
     return (
         <>
@@ -45,6 +49,7 @@ export default function Checkboxes({
                         id="ATR-radio"
                         value="ATR"
                         onChange={(e) => {
+                            setIsGreyed(true);
                             setTRtype(e.target.value);
                         }}
                         checked={TRtype === "ATR"}
@@ -61,6 +66,18 @@ export default function Checkboxes({
                     onChange={() => setIsResized(!isResised)}
                 />
                 <span className="text-sm text-neutral-content">Is Resized</span>
+            </label>
+            <label htmlFor="isGreyed" className="flex gap-2 mb-1">
+                <input
+                    className="checkbox checkbox-xs checkbox-secondary"
+                    type="checkbox"
+                    name="isGreyed"
+                    id="isGreyed"
+                    disabled={isBilateralFon}
+                    checked={isGreyed}
+                    onChange={() => setIsGreyed(!isGreyed)}
+                />
+                <span className="text-sm text-neutral-content">Is Greyed</span>
             </label>
             <label htmlFor="isThresholded" className="flex gap-2 mb-1">
                 <input

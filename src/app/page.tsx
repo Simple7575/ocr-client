@@ -37,8 +37,10 @@ export default function Home() {
     const [isBilateralFon, setIsBilateralFon] = useState(false);
     const [isThresholded, setThresholded] = useState(false);
     const [isResised, setIsResized] = useState(false);
+    const [isGreyed, setIsGreyed] = useState(false);
     const [text, setText] = useState("");
     const [progress, setProgress] = useState("0");
+    const [timage, settimag] = useState();
 
     const handleATRchange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
         const payload = Number(e.target.value);
@@ -68,56 +70,54 @@ export default function Home() {
         setIsCVready(true);
     };
 
+    const [median, setMedian] = useState(3);
     useEffect(() => {
         if (!isCVready) return;
 
         let animationID: number | undefined;
         let srcImg: cv.Mat | never;
-        let bluredImg: cv.Mat | never;
-        let medianBluredImg: cv.Mat | never;
-        let bilateralImg: cv.Mat | undefined;
-        let adaptiveTImg: cv.Mat | undefined;
-        let sTRImg: cv.Mat | undefined;
-        let greyedImg: cv.Mat | undefined;
 
         srcImg = cv.imread(imgRef.current!);
 
-        const processing = new ProcessImg(srcImg);
-
         const animate = () => {
-            greyedImg = processing.greyedImg(srcImg);
-            if (isResised) {
-                const [rw, rh] = CalculateAspRatio(3000, srcImg.cols, srcImg.rows);
-                let dsize = new cv.Size(rw, rh);
-                cv.resize(srcImg, srcImg, new cv.Size(0, 0), 2, 2, cv.INTER_CUBIC);
-            }
-            if (isThresholded) {
-                if (TRtype === "ATR") {
-                    if (isBilateralFon) {
-                        if (greyedImg) bilateralImg = processing.bilateralImg(greyedImg, BLF);
-                        if (bilateralImg) adaptiveTImg = processing.adaptiveTImg(bilateralImg, ATR);
-                        if (adaptiveTImg) cv.imshow(canvasRef.current!, adaptiveTImg);
-                    } else {
-                        if (greyedImg) adaptiveTImg = processing.adaptiveTImg(greyedImg, ATR);
-                        if (adaptiveTImg) cv.imshow(canvasRef.current!, adaptiveTImg);
-                    }
-                } else {
-                    if (isBilateralFon) {
-                        if (greyedImg) bilateralImg = processing.bilateralImg(greyedImg, BLF);
-                        if (bilateralImg) sTRImg = processing.simpleThreshold(bilateralImg, STR);
-                        if (sTRImg) cv.imshow(canvasRef.current!, sTRImg);
-                    } else {
-                        if (greyedImg) sTRImg = processing.simpleThreshold(srcImg, STR);
-                        if (sTRImg) cv.imshow(canvasRef.current!, sTRImg);
-                    }
+            try {
+                if (isResised) {
+                    // const [rw, rh] = CalculateAspRatio(3000, srcImg.cols, srcImg.rows);
+                    // let dsize = new cv.Size(rw, rh);
+                    // cv.resize(srcImg, srcImg, new cv.Size(0, 0), 5, 5, cv.INTER_CUBIC);
+                    cv.resize(srcImg, srcImg, new cv.Size(0, 0), 5, 5, cv.INTER_CUBIC);
                 }
-            } else {
+                if (isGreyed && !isBilateralFon) {
+                    cv.cvtColor(srcImg, srcImg, cv.COLOR_RGBA2GRAY, 0);
+                }
                 if (isBilateralFon) {
-                    if (greyedImg) bilateralImg = processing.bilateralImg(greyedImg, BLF);
-                    if (bilateralImg) cv.imshow(canvasRef.current!, bilateralImg);
-                } else {
-                    cv.imshow(canvasRef.current!, srcImg);
+                    const dst = new cv.Mat();
+                    try {
+                        cv.cvtColor(srcImg, dst, cv.COLOR_RGBA2GRAY, 0);
+                        // prettier-ignore
+                        cv.bilateralFilter(dst, srcImg, BLF.D, BLF.sigmaColor, BLF.sigmaSpace, BLF.borderType);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        dst.delete();
+                    }
                 }
+                if (isThresholded) {
+                    cv.medianBlur(srcImg, srcImg, median);
+
+                    if (TRtype === "ATR") {
+                        // prettier-ignore
+                        cv.adaptiveThreshold( srcImg, srcImg, ATR.maxValue, Number(ATR.adaptiveMethod), Number(ATR.thresholdType), Number(ATR.blockSize), ATR.C );
+                    } else {
+                        cv.threshold(srcImg, srcImg, STR.thresh, STR.maxValue, STR.thresholdType);
+                    }
+                }
+
+                cv.imshow(canvasRef.current!, srcImg);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                if (srcImg) srcImg.delete();
             }
         };
 
@@ -127,15 +127,20 @@ export default function Home() {
             // gui.destroy();
             // imgElement.remove();
             if (animationID) cancelAnimationFrame(animationID);
-            if (srcImg) srcImg.delete();
-            if (greyedImg) greyedImg.delete();
-            if (adaptiveTImg) adaptiveTImg.delete();
-            if (bluredImg) bluredImg.delete;
-            if (medianBluredImg) medianBluredImg.delete();
-            if (bilateralImg) bilateralImg.delete();
-            if (sTRImg) sTRImg.delete();
+            if (!srcImg.isDeleted) srcImg.delete();
         };
-    }, [isCVready, ATR, STR, BLF, isBilateralFon, isThresholded, isResised, TRtype]);
+    }, [
+        isCVready,
+        ATR,
+        STR,
+        BLF,
+        isBilateralFon,
+        isThresholded,
+        isResised,
+        TRtype,
+        isGreyed,
+        median,
+    ]);
 
     const handleOCR = async (e: MouseEvent<HTMLButtonElement>) => {
         console.log(canvasRef.current?.toDataURL());
@@ -156,6 +161,14 @@ export default function Home() {
         const res = await worker.recognize(canvasRef.current?.toDataURL()!);
 
         setText(res.data.text);
+    };
+
+    const handleSave = () => {
+        const link = document.createElement("a");
+        link.download = "filename.jpg";
+        link.href = canvasRef.current!.toDataURL();
+        link.click();
+        link.remove();
     };
 
     const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
@@ -187,13 +200,15 @@ export default function Home() {
                     <h3>Canvas</h3>
                     {/* {isPending ? "Processing..." : ""} */}
                     <canvas className="max-w-2xl" ref={canvasRef}></canvas>
-                    <p>Progress {progress} %</p>
+                    <p>
+                        Progress {progress} % {isPending ? "Loading..." : ""}
+                    </p>
                     <p className="text-sm w-96">{text}</p>
                 </div>
                 <div>
                     <div>
                         {/* prettier-ignore */}
-                        <img className="max-w-2xl" id="imgSrc" src="./example.jpg" alt="srcimg" ref={imgRef} hidden/>
+                        <img className="max-w-2xl" id="imgSrc" src="./example4.png" alt="srcimg" ref={imgRef} hidden/>
                         <input
                             className="file-input file-input-bordered file-input-secondary file-input-sm w-full max-w-xs"
                             type="file"
@@ -202,6 +217,20 @@ export default function Home() {
                     </div>
                     <div>
                         <h3 className="font-bold text-2xl text-secondary">Controls</h3>
+                        <label htmlFor="">{median}</label>
+                        <input
+                            type="range"
+                            min="3"
+                            max="15"
+                            value={median}
+                            onChange={(e) => {
+                                setMedian((pre) => {
+                                    if (Number(e.target.value) % 2 !== 0)
+                                        return Number(e.target.value);
+                                    else return pre;
+                                });
+                            }}
+                        />
                         <Checkboxes
                             isBilateralFon={isBilateralFon}
                             setIsBilateralFon={setIsBilateralFon}
@@ -211,6 +240,8 @@ export default function Home() {
                             setIsResized={setIsResized}
                             TRtype={TRtype}
                             setTRtype={setTRtype}
+                            isGreyed={isGreyed}
+                            setIsGreyed={setIsGreyed}
                         />
                         {isBilateralFon ? (
                             <BLFinputs BLF={BLF} handleBLFchange={handleBLFchange} />
@@ -220,13 +251,22 @@ export default function Home() {
                         ) : (
                             <STRinputs STR={STR} handleSTRchange={handleSTRchange} />
                         )}
-                        <button
-                            className="btn btn-secondary mt-1"
-                            type="button"
-                            onClick={handleOCR}
-                        >
-                            Process OCR
-                        </button>
+                        <div className="flex gap-x-2">
+                            <button
+                                className="btn btn-secondary btn-sm mt-1"
+                                type="button"
+                                onClick={handleOCR}
+                            >
+                                Process OCR
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-sm mt-1"
+                                type="button"
+                                onClick={handleSave}
+                            >
+                                Save
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

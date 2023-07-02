@@ -28,6 +28,9 @@ export const BLFreducer = (state: BLFtype, action: BLFaction) => {
             return { ...state, sigmaColor: Number(action.payload) };
         case "sigmaSpace":
             return { ...state, sigmaSpace: Number(action.payload) };
+        case "borderType":
+            console.log(action.payload);
+            return { ...state, borderType: Number(action.payload) };
         default:
             return state;
             break;
@@ -85,6 +88,22 @@ export default function BLFinputs({ BLF, handleBLFchange }: Props) {
                     value={BLF.sigmaSpace}
                     onChange={handleBLFchange}
                 />
+            </label>
+            <label className="flex flex-col" htmlFor="BLF-borderType">
+                <span className="text-sm text-neutral-content">{`Border type: ${BLF.borderType}`}</span>
+                <select
+                    className="select select-xs select-secondary w-full max-w-xs"
+                    name="BLF-borderType"
+                    id="BLF-borderType"
+                    value={BLF.borderType}
+                    onChange={handleBLFchange}
+                >
+                    <option value="0">BORDER_CONSTANT</option>
+                    <option value="1">BORDER_REPLICATE</option>
+                    <option value="2">BORDER_REFLECT</option>
+                    <option value="3">BORDER_WRAP</option>
+                    <option value="4">BORDER_REFLECT_101</option>
+                </select>
             </label>
         </div>
     );

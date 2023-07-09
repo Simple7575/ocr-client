@@ -18,6 +18,7 @@ import { ProcessImg } from "@/utils/ProcessIng";
 import ATRinputs, { ATRinitial, ATRreducer } from "./(components)/ATRinputs";
 import STRinputs, { STRType, STRinitial, STRreducer } from "./(components)/STRinputs";
 import BLFinputs, { BLFinitial, BLFreducer, BLFtype } from "./(components)/BLFinputs";
+import GAUSinputs, { GAUSinitial, GAUSreducer, GAUSType } from "./(components)/GausInputs";
 
 import Checkboxes from "./(components)/Checkboxes";
 import { CalculateAspRatio } from "@/utils/CalculateAspRatio";
@@ -27,20 +28,25 @@ import { type ATRType } from "./(components)/ATRinputs";
 export default function Home() {
     const isExecuted = useRef(false);
     const [isPending, startTransition] = useTransition();
-    const [isCVready, setIsCVready] = useState(false);
+    const [text, setText] = useState("");
+    const [progress, setProgress] = useState("0");
+    // refs
     const imgRef = useRef<HTMLImageElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const [ATR, ATRdispatch] = useReducer(ATRreducer, ATRinitial);
-    const [STR, STRdispatch] = useReducer(STRreducer, STRinitial);
-    const [BLF, BLFdispatch] = useReducer(BLFreducer, BLFinitial);
-    const [TRtype, setTRtype] = useState("STR");
+    // bools
     const [isBilateralFon, setIsBilateralFon] = useState(false);
     const [isThresholded, setThresholded] = useState(false);
     const [isResised, setIsResized] = useState(false);
     const [isGreyed, setIsGreyed] = useState(false);
-    const [text, setText] = useState("");
-    const [progress, setProgress] = useState("0");
-    const [timage, settimag] = useState();
+    const [isCVready, setIsCVready] = useState(false);
+    const [isGausian, setIsGausian] = useState(false);
+    const [isBlured, setIsBlured] = useState(false);
+    // states
+    const [ATR, ATRdispatch] = useReducer(ATRreducer, ATRinitial);
+    const [STR, STRdispatch] = useReducer(STRreducer, STRinitial);
+    const [BLF, BLFdispatch] = useReducer(BLFreducer, BLFinitial);
+    const [GAUS, GAUSdispatch] = useReducer(GAUSreducer, GAUSinitial);
+    const [TRtype, setTRtype] = useState("STR");
 
     const handleATRchange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
         const payload = Number(e.target.value);
@@ -66,81 +72,92 @@ export default function Home() {
         });
     };
 
+    const handleGAUSchange = (
+        e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>
+    ) => {
+        const payload = Number(e.target.value);
+        const type = e.target.name.split("-")[1] as keyof GAUSType;
+        startTransition(() => {
+            GAUSdispatch({ type, payload });
+        });
+    };
+
     cv["onRuntimeInitialized"] = () => {
         setIsCVready(true);
     };
 
     const [median, setMedian] = useState(3);
-    useEffect(() => {
-        if (!isCVready) return;
+    useEffect(
+        () => {
+            if (!isCVready) return;
 
-        let animationID: number | undefined;
-        let srcImg: cv.Mat | never;
+            let animationID: number | undefined;
+            let srcImg: cv.Mat | never;
 
-        srcImg = cv.imread(imgRef.current!);
+            srcImg = cv.imread(imgRef.current!);
 
-        const animate = () => {
-            try {
-                if (isResised) {
-                    // const [rw, rh] = CalculateAspRatio(3000, srcImg.cols, srcImg.rows);
-                    // let dsize = new cv.Size(rw, rh);
-                    // cv.resize(srcImg, srcImg, new cv.Size(0, 0), 5, 5, cv.INTER_CUBIC);
-                    cv.resize(srcImg, srcImg, new cv.Size(0, 0), 5, 5, cv.INTER_CUBIC);
-                }
-                if (isGreyed && !isBilateralFon) {
-                    cv.cvtColor(srcImg, srcImg, cv.COLOR_RGBA2GRAY, 0);
-                }
-                if (isBilateralFon) {
-                    const dst = new cv.Mat();
-                    try {
-                        cv.cvtColor(srcImg, dst, cv.COLOR_RGBA2GRAY, 0);
-                        // prettier-ignore
-                        cv.bilateralFilter(dst, srcImg, BLF.D, BLF.sigmaColor, BLF.sigmaSpace, BLF.borderType);
-                    } catch (error) {
-                        console.error(error);
-                    } finally {
-                        dst.delete();
+            const animate = () => {
+                try {
+                    if (isResised) {
+                        // const [rw, rh] = CalculateAspRatio(3000, srcImg.cols, srcImg.rows);
+                        // let dsize = new cv.Size(rw, rh);
+                        // cv.resize(srcImg, srcImg, new cv.Size(0, 0), 5, 5, cv.INTER_CUBIC);
+                        cv.resize(srcImg, srcImg, new cv.Size(0, 0), 7, 7, cv.INTER_CUBIC);
                     }
-                }
-                if (isThresholded) {
-                    cv.medianBlur(srcImg, srcImg, median);
-
-                    if (TRtype === "ATR") {
-                        // prettier-ignore
-                        cv.adaptiveThreshold( srcImg, srcImg, ATR.maxValue, Number(ATR.adaptiveMethod), Number(ATR.thresholdType), Number(ATR.blockSize), ATR.C );
-                    } else {
-                        cv.threshold(srcImg, srcImg, STR.thresh, STR.maxValue, STR.thresholdType);
+                    if (isGreyed && !isBilateralFon) {
+                        cv.cvtColor(srcImg, srcImg, cv.COLOR_RGBA2GRAY, 0);
+                        // cv.cvtColor(srcImg, srcImg, cv.COLOR_BGR2HSV, 0);
                     }
+                    if (isBilateralFon) {
+                        const dst = new cv.Mat();
+                        try {
+                            cv.cvtColor(srcImg, dst, cv.COLOR_RGBA2GRAY, 0);
+                            // prettier-ignore
+                            cv.bilateralFilter(dst, srcImg, BLF.D, BLF.sigmaColor, BLF.sigmaSpace, BLF.borderType);
+                        } catch (error) {
+                            console.error(error);
+                        } finally {
+                            dst.delete();
+                        }
+                    }
+                    if (isBlured) {
+                        cv.medianBlur(srcImg, srcImg, median);
+                    }
+                    if (isThresholded) {
+                        if (TRtype === "ATR") {
+                            // prettier-ignore
+                            cv.adaptiveThreshold( srcImg, srcImg, ATR.maxValue, Number(ATR.adaptiveMethod), Number(ATR.thresholdType), Number(ATR.blockSize), ATR.C );
+                        } else {
+                            // prettier-ignore
+                            cv.threshold( srcImg, srcImg, STR.thresh, STR.maxValue, STR.thresholdType );
+                        }
+                    }
+                    if (isGausian) {
+                        let ksize = new cv.Size(GAUS.ksize, GAUS.ksize);
+                        // prettier-ignore
+                        cv.GaussianBlur(srcImg, srcImg, ksize, GAUS.sigmaX, GAUS.sigmaY, cv.BORDER_DEFAULT);
+                    }
+
+                    cv.imshow(canvasRef.current!, srcImg);
+                } catch (error) {
+                    console.error(error);
+                } finally {
+                    if (srcImg) srcImg.delete();
                 }
+            };
 
-                cv.imshow(canvasRef.current!, srcImg);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                if (srcImg) srcImg.delete();
-            }
-        };
+            animate();
 
-        animate();
-
-        return () => {
-            // gui.destroy();
-            // imgElement.remove();
-            if (animationID) cancelAnimationFrame(animationID);
-            if (!srcImg.isDeleted) srcImg.delete();
-        };
-    }, [
-        isCVready,
-        ATR,
-        STR,
-        BLF,
-        isBilateralFon,
-        isThresholded,
-        isResised,
-        TRtype,
-        isGreyed,
-        median,
-    ]);
+            return () => {
+                // gui.destroy();
+                // imgElement.remove();
+                if (animationID) cancelAnimationFrame(animationID);
+                if (!srcImg.isDeleted) srcImg.delete();
+            };
+        },
+        // prettier-ignore
+        [ isCVready, ATR, STR, BLF, GAUS, isBilateralFon, isThresholded, isResised, isGausian, isBlured, TRtype, isGreyed, median ]
+    );
 
     const handleOCR = async (e: MouseEvent<HTMLButtonElement>) => {
         console.log(canvasRef.current?.toDataURL());
@@ -161,6 +178,7 @@ export default function Home() {
         const res = await worker.recognize(canvasRef.current?.toDataURL()!);
 
         setText(res.data.text);
+        await worker.terminate();
     };
 
     const handleSave = () => {
@@ -208,7 +226,7 @@ export default function Home() {
                 <div>
                     <div>
                         {/* prettier-ignore */}
-                        <img className="max-w-2xl" id="imgSrc" src="./example4.png" alt="srcimg" ref={imgRef} hidden/>
+                        <img className="max-w-2xl" id="imgSrc" src="./exampletrimmed.jpg" alt="srcimg" ref={imgRef} hidden/>
                         <input
                             className="file-input file-input-bordered file-input-secondary file-input-sm w-full max-w-xs"
                             type="file"
@@ -242,6 +260,10 @@ export default function Home() {
                             setTRtype={setTRtype}
                             isGreyed={isGreyed}
                             setIsGreyed={setIsGreyed}
+                            isGausian={isGausian}
+                            setIsGausian={setIsGausian}
+                            isBlured={isBlured}
+                            setIsBlured={setIsBlured}
                         />
                         {isBilateralFon ? (
                             <BLFinputs BLF={BLF} handleBLFchange={handleBLFchange} />
@@ -251,6 +273,7 @@ export default function Home() {
                         ) : (
                             <STRinputs STR={STR} handleSTRchange={handleSTRchange} />
                         )}
+                        <GAUSinputs GAUS={GAUS} handleGAUSchange={handleGAUSchange} />
                         <div className="flex gap-x-2">
                             <button
                                 className="btn btn-secondary btn-sm mt-1"

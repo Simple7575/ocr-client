@@ -11,6 +11,10 @@ interface Props {
     setTRtype: Dispatch<SetStateAction<string>>;
     isGreyed: boolean;
     setIsGreyed: Dispatch<SetStateAction<boolean>>;
+    isGausian: boolean;
+    setIsGausian: Dispatch<SetStateAction<boolean>>;
+    isBlured: boolean;
+    setIsBlured: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function Checkboxes({
@@ -24,6 +28,10 @@ export default function Checkboxes({
     setTRtype,
     isGreyed,
     setIsGreyed,
+    isGausian,
+    setIsGausian,
+    isBlured,
+    setIsBlured,
 }: Props) {
     return (
         <>
@@ -56,7 +64,7 @@ export default function Checkboxes({
                     />
                 </label>
             </div>
-            <label htmlFor="isResised" className="flex gap-2 mb-1">
+            <label htmlFor="isResised" className="flex gap-2">
                 <input
                     className="checkbox checkbox-xs checkbox-secondary"
                     type="checkbox"
@@ -67,7 +75,7 @@ export default function Checkboxes({
                 />
                 <span className="text-sm text-neutral-content">Is Resized</span>
             </label>
-            <label htmlFor="isGreyed" className="flex gap-2 mb-1">
+            <label htmlFor="isGreyed" className="flex gap-2">
                 <input
                     className="checkbox checkbox-xs checkbox-secondary"
                     type="checkbox"
@@ -79,7 +87,7 @@ export default function Checkboxes({
                 />
                 <span className="text-sm text-neutral-content">Is Greyed</span>
             </label>
-            <label htmlFor="isThresholded" className="flex gap-2 mb-1">
+            <label htmlFor="isThresholded" className="flex gap-2">
                 <input
                     className="checkbox checkbox-xs checkbox-secondary"
                     type="checkbox"
@@ -90,6 +98,17 @@ export default function Checkboxes({
                 />
                 <span className="text-sm text-neutral-content">Is Threshholded</span>
             </label>
+            <label htmlFor="isBlured" className="flex gap-2">
+                <input
+                    className="checkbox checkbox-xs checkbox-secondary"
+                    type="checkbox"
+                    name="isBlured"
+                    id="isBlured"
+                    checked={isBlured}
+                    onChange={() => setIsBlured(!isBlured)}
+                />
+                <span className="text-sm text-neutral-content">Is Blured</span>
+            </label>
             <label htmlFor="isBilateralOn" className="flex gap-2">
                 <input
                     className="checkbox checkbox-xs checkbox-secondary"
@@ -99,7 +118,18 @@ export default function Checkboxes({
                     checked={isBilateralFon}
                     onChange={() => setIsBilateralFon(!isBilateralFon)}
                 />
-                <span className="text-sm text-neutral-content">Is bilateral on</span>
+                <span className="text-sm text-neutral-content">Is Bilateral on</span>
+            </label>
+            <label htmlFor="isGausian" className="flex gap-2">
+                <input
+                    className="checkbox checkbox-xs checkbox-secondary"
+                    type="checkbox"
+                    name="isGausian"
+                    id="isGausian"
+                    checked={isGausian}
+                    onChange={() => setIsGausian(!isGausian)}
+                />
+                <span className="text-sm text-neutral-content">Is Gausian on</span>
             </label>
         </>
     );

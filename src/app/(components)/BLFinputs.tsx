@@ -44,7 +44,7 @@ interface Props {
 
 export default function BLFinputs({ BLF, handleBLFchange }: Props) {
     return (
-        <div className="flex flex-col w-64">
+        <div className="flex flex-col w-64 border border-secondary-focus p-2">
             <strong>BLF</strong>
             <label className="flex flex-col" htmlFor="BLF-D">
                 <span className="text-sm text-neutral-content">{`Diemeter: ${BLF.D}`}</span>

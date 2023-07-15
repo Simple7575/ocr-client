@@ -37,7 +37,7 @@ interface Props {
 
 export default function STRinputs({ STR, handleSTRchange }: Props) {
     return (
-        <div className="flex flex-col w-64">
+        <div className="flex flex-col w-64 border border-secondary-focus p-2">
             <strong>STR</strong>
             <label className="flex flex-col" htmlFor="STR-thresh">
                 <span className="text-sm text-neutral-content">{`Thresh: ${STR.thresh}`}</span>

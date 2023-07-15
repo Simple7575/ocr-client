@@ -1,69 +1,42 @@
 import { Dispatch, SetStateAction } from "react";
 
 interface Props {
+    setIsLoading: Dispatch<SetStateAction<boolean>>;
     isBilateralFon: boolean;
     setIsBilateralFon: Dispatch<SetStateAction<boolean>>;
-    isThresholded: boolean;
-    setThresholded: Dispatch<SetStateAction<boolean>>;
+    isATR: boolean;
+    setIsATR: Dispatch<SetStateAction<boolean>>;
+    isSTR: boolean;
+    setIsSTR: Dispatch<SetStateAction<boolean>>;
     isResised: boolean;
     setIsResized: Dispatch<SetStateAction<boolean>>;
-    TRtype: string;
-    setTRtype: Dispatch<SetStateAction<string>>;
     isGreyed: boolean;
     setIsGreyed: Dispatch<SetStateAction<boolean>>;
     isGausian: boolean;
     setIsGausian: Dispatch<SetStateAction<boolean>>;
-    isBlured: boolean;
-    setIsBlured: Dispatch<SetStateAction<boolean>>;
+    isMedian: boolean;
+    setIsMedian: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function Checkboxes({
+    setIsLoading,
     isBilateralFon,
     setIsBilateralFon,
-    isThresholded,
-    setThresholded,
+    isATR,
+    setIsATR,
+    isSTR,
+    setIsSTR,
     isResised,
     setIsResized,
-    TRtype,
-    setTRtype,
     isGreyed,
     setIsGreyed,
     isGausian,
     setIsGausian,
-    isBlured,
-    setIsBlured,
+    isMedian,
+    setIsMedian,
 }: Props) {
     return (
-        <>
-            <div>
-                <label htmlFor="STR-radio">
-                    STR
-                    <input
-                        type="radio"
-                        name="TR-type"
-                        id="STR-radio"
-                        value="STR"
-                        onChange={(e) => {
-                            setTRtype(e.target.value);
-                        }}
-                        checked={TRtype === "STR"}
-                    />
-                </label>
-                <label htmlFor="ATR-radio">
-                    ATR
-                    <input
-                        type="radio"
-                        name="TR-type"
-                        id="ATR-radio"
-                        value="ATR"
-                        onChange={(e) => {
-                            setIsGreyed(true);
-                            setTRtype(e.target.value);
-                        }}
-                        checked={TRtype === "ATR"}
-                    />
-                </label>
-            </div>
+        <div className="grid grid-cols-2">
             <label htmlFor="isResised" className="flex gap-2">
                 <input
                     className="checkbox checkbox-xs checkbox-secondary"
@@ -71,7 +44,10 @@ export default function Checkboxes({
                     name="isResised"
                     id="isResised"
                     checked={isResised}
-                    onChange={() => setIsResized(!isResised)}
+                    onChange={() => {
+                        setIsLoading(true);
+                        setIsResized(!isResised);
+                    }}
                 />
                 <span className="text-sm text-neutral-content">Is Resized</span>
             </label>
@@ -83,31 +59,54 @@ export default function Checkboxes({
                     id="isGreyed"
                     disabled={isBilateralFon}
                     checked={isGreyed}
-                    onChange={() => setIsGreyed(!isGreyed)}
+                    onChange={() => {
+                        setIsLoading(true);
+                        setIsGreyed(!isGreyed);
+                    }}
                 />
-                <span className="text-sm text-neutral-content">Is Greyed</span>
+                <span className="text-sm text-neutral-content">Is greyed</span>
             </label>
-            <label htmlFor="isThresholded" className="flex gap-2">
+            <label htmlFor="isATR" className="flex gap-2">
                 <input
                     className="checkbox checkbox-xs checkbox-secondary"
                     type="checkbox"
-                    name="isThresholded"
-                    id="isThresholded"
-                    checked={isThresholded}
-                    onChange={() => setThresholded(!isThresholded)}
+                    name="isATR"
+                    id="isATR"
+                    checked={isATR}
+                    onChange={() => {
+                        setIsLoading(true);
+                        setIsATR(!isATR);
+                    }}
                 />
-                <span className="text-sm text-neutral-content">Is Threshholded</span>
+                <span className="text-sm text-neutral-content">isATR</span>
             </label>
-            <label htmlFor="isBlured" className="flex gap-2">
+            <label htmlFor="isSTR" className="flex gap-2">
                 <input
                     className="checkbox checkbox-xs checkbox-secondary"
                     type="checkbox"
-                    name="isBlured"
-                    id="isBlured"
-                    checked={isBlured}
-                    onChange={() => setIsBlured(!isBlured)}
+                    name="isSTR"
+                    id="isSTR"
+                    checked={isSTR}
+                    onChange={() => {
+                        setIsLoading(true);
+                        setIsSTR(!isSTR);
+                    }}
                 />
-                <span className="text-sm text-neutral-content">Is Blured</span>
+                <span className="text-sm text-neutral-content">isSTR</span>
+            </label>
+            <label htmlFor="isMedian" className="flex gap-2">
+                <input
+                    className="checkbox checkbox-xs checkbox-secondary"
+                    type="checkbox"
+                    name="isMedian"
+                    id="isMedian"
+                    checked={isMedian}
+                    onChange={() => {
+                        setIsLoading(true);
+                        setIsMedian(!isMedian);
+                    }}
+                />
+                <span className="text-sm text-neutral-content">Is Median</span>
             </label>
             <label htmlFor="isBilateralOn" className="flex gap-2">
                 <input
@@ -116,7 +115,10 @@ export default function Checkboxes({
                     name="isBilateralOn"
                     id="isBilateralOn"
                     checked={isBilateralFon}
-                    onChange={() => setIsBilateralFon(!isBilateralFon)}
+                    onChange={() => {
+                        setIsLoading(true);
+                        setIsBilateralFon(!isBilateralFon);
+                    }}
                 />
                 <span className="text-sm text-neutral-content">Is Bilateral on</span>
             </label>
@@ -127,10 +129,13 @@ export default function Checkboxes({
                     name="isGausian"
                     id="isGausian"
                     checked={isGausian}
-                    onChange={() => setIsGausian(!isGausian)}
+                    onChange={() => {
+                        setIsLoading(true);
+                        setIsGausian(!isGausian);
+                    }}
                 />
                 <span className="text-sm text-neutral-content">Is Gausian on</span>
             </label>
-        </>
+        </div>
     );
 }

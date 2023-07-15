@@ -1,3 +1,4 @@
+import { odder } from "@/utils/Odder";
 import { ChangeEvent } from "react";
 
 export type GAUSType = {
@@ -20,9 +21,7 @@ export type GAUSaction =
 export const GAUSreducer = (state: GAUSType, action: GAUSaction) => {
     switch (action.type) {
         case "ksize":
-            if (Number(action.payload) % 2 !== 0)
-                return { ...state, ksize: Number(action.payload) };
-            else return { ...state };
+            return { ...state, ksize: odder(state.ksize, action.payload) };
         case "sigmaX":
             return { ...state, sigmaX: Number(action.payload) };
         case "sigmaY":
@@ -39,7 +38,7 @@ interface Props {
 
 export default function GAUSinputs({ GAUS, handleGAUSchange }: Props) {
     return (
-        <div className="flex flex-col w-64">
+        <div className="flex flex-col w-64 border border-secondary-focus p-2">
             <strong>Gausian blur</strong>
             <label className="flex flex-col" htmlFor="GAUS-ksize">
                 <span className="text-sm text-neutral-content">{`Ksize: ${GAUS.ksize}, ${GAUS.ksize}`}</span>

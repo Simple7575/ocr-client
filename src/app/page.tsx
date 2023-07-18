@@ -9,6 +9,7 @@ import {
     type MouseEvent,
 } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { PiCopySimple } from "react-icons/pi";
 import debounce from "lodash/debounce";
 
 import cv from "@techstark/opencv-js";
@@ -28,12 +29,13 @@ export default function Home() {
     const isExecuted = useRef(false);
     const [isPending, startTransition] = useTransition();
     const [text, setText] = useState("");
-    const [progress, setProgress] = useState("0");
+    const [progress, setProgress] = useState(0);
+    const [img, setImg] = useState<HTMLImageElement | null>(null);
     // refs
-    const imgRef = useRef<HTMLImageElement | null>(null);
     const srcImgRef = useRef<cv.Mat | undefined>(undefined);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     // bools
+    const [isDefaultSettings, setIsDefaultSettings] = useState(true);
     const [isBilateralFon, setIsBilateralFon] = useState(false);
     const [isSTR, setIsSTR] = useState(false);
     const [isATR, setIsATR] = useState(false);
@@ -43,6 +45,7 @@ export default function Home() {
     const [isGausian, setIsGausian] = useState(false);
     const [isMedian, setIsMedian] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isTextLoading, setIsTextLoading] = useState(false);
     // states
     const [ATR, ATRdispatch] = useReducer(ATRreducer, ATRinitial);
     const [STR, STRdispatch] = useReducer(STRreducer, STRinitial);
@@ -77,8 +80,16 @@ export default function Home() {
             }
             if (isMedian) {
                 cv.medianBlur(srcImgRef.current!, srcImgRef.current!, median);
+                // cv.medianBlur(srcImgRef.current!, srcImgRef.current!, 3);
+                // cv.medianBlur(srcImgRef.current!, srcImgRef.current!, 11);
+            }
+            if (isGausian) {
+                let ksize = new cv.Size(GAUS.ksize, GAUS.ksize);
+                // prettier-ignore
+                cv.GaussianBlur(srcImgRef.current!, srcImgRef.current!, ksize, GAUS.sigmaX, GAUS.sigmaY, cv.BORDER_DEFAULT);
             }
             if (isSTR) {
+                // cv.threshold(srcImgRef.current!, srcImgRef.current!, 162, 255, cv.THRESH_TRUNC);
                 // prettier-ignore
                 cv.threshold( srcImgRef.current!, srcImgRef.current!, STR.thresh, STR.maxValue, STR.thresholdType );
             }
@@ -88,11 +99,7 @@ export default function Home() {
                 // prettier-ignore
                 cv.adaptiveThreshold( srcImgRef.current!, srcImgRef.current!, ATR.maxValue, Number(ATR.adaptiveMethod), Number(ATR.thresholdType), Number(ATR.blockSize), ATR.C );
             }
-            if (isGausian) {
-                let ksize = new cv.Size(GAUS.ksize, GAUS.ksize);
-                // prettier-ignore
-                cv.GaussianBlur(srcImgRef.current!, srcImgRef.current!, ksize, GAUS.sigmaX, GAUS.sigmaY, cv.BORDER_DEFAULT);
-            }
+            // cv.Canny(srcImgRef.current!, srcImgRef.current!, 200, 50, 7, true);
 
             cv.imshow(canvasRef.current!, srcImgRef.current!);
             setIsLoading(false);
@@ -116,9 +123,10 @@ export default function Home() {
     useEffect(
         () => {
             if (!isCVready) return;
+            if (!img) return;
 
             if (!srcImgRef.current || srcImgRef.current.isDeleted()) {
-                srcImgRef.current = cv.imread(imgRef.current!);
+                srcImgRef.current = cv.imread(img);
             }
 
             debounced();
@@ -126,7 +134,7 @@ export default function Home() {
             return () => {};
         },
         // prettier-ignore
-        [ isCVready, ATR, STR, BLF, GAUS, isBilateralFon, isResised, isGausian, isMedian, isGreyed, median, isATR, isSTR ]
+        [ isCVready, ATR, STR, BLF, GAUS, isBilateralFon, isResised, isGausian, isMedian, isGreyed, median, isATR, isSTR, img ]
     );
 
     const handleATRchange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
@@ -181,10 +189,12 @@ export default function Home() {
     };
 
     const handleOCR = async (e: MouseEvent<HTMLButtonElement>) => {
-        console.log("OCR");
+        setIsTextLoading(true);
 
         const worker = await createWorker({
-            logger: (message) => setProgress(String(message.progress)),
+            logger: (message) => {
+                setProgress(Math.round(message.progress * 100));
+            },
         });
 
         await worker.loadLanguage("eng");
@@ -199,6 +209,7 @@ export default function Home() {
         const res = await worker.recognize(canvasRef.current?.toDataURL()!);
 
         setText(res.data.text);
+        setIsTextLoading(false);
         await worker.terminate();
     };
 
@@ -215,89 +226,102 @@ export default function Home() {
         const reader = new FileReader();
 
         reader.onload = (e) => {
-            const imgUrl = URL.createObjectURL(file);
-            imgRef.current!.setAttribute("src", imgUrl);
-        };
-
-        imgRef.current!.onload = (e) => {
-            let mat = cv.imread(imgRef.current!);
-            let dst = new cv.Mat();
-            // You can try more different parameters
-            cv.threshold(mat, dst, 177, 200, cv.THRESH_BINARY);
-            // cv.threshold(mat, )
-            cv.imshow(canvasRef.current!, dst);
-            mat.delete();
+            const image = document.createElement("img");
+            image.setAttribute("src", e.target!.result! as string);
+            setImg(image);
+            image.remove();
         };
 
         reader.readAsDataURL(file);
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-screen pt-9 pb-9">
             <div className="flex gap-3">
                 <div>
-                    <div className="relative">
-                        <canvas className="max-w-2xl" ref={canvasRef}></canvas>
+                    <div className="relative w-w-l min-h-80 border border-secondary-focus">
+                        <canvas className="max-w-full" ref={canvasRef}></canvas>
                         {isLoading ? (
                             <div className="absolute left-0 top-0 right-0 bottom-0 flex items-center justify-center bg-slate-700/50">
-                                <div className="">
+                                <div>
                                     <AiOutlineLoading3Quarters
                                         size={56}
-                                        color="purple"
+                                        color="#bf95f9"
                                         className="animate-spin mr-3"
                                     />
                                 </div>
                             </div>
                         ) : null}
                     </div>
-                    <p>Progress {progress} %</p>
-                    <p className="text-sm w-96">{text}</p>
+                    <progress
+                        className="progress progress-secondary w-full"
+                        value={progress}
+                        max="100"
+                    ></progress>
+                    <div className="relative">
+                        <textarea
+                            className="textarea relative w-w-l h-80 border border-secondary-focus"
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                        />
+                        <div
+                            className="tooltip tooltip-top absolute right-2 top-2"
+                            data-tip="Copy text"
+                        >
+                            <button
+                                className=" btn btn-ghost btn-xs rounded-sm"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(text);
+                                }}
+                            >
+                                <PiCopySimple color="aqua" />
+                            </button>
+                        </div>
+                        {isTextLoading ? (
+                            <div className="loading loading-ring text-secondary absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-28"></div>
+                        ) : null}
+                    </div>
                 </div>
                 <div>
                     <div>
-                        {/* prettier-ignore */}
-                        <img className="max-w-2xl" id="imgSrc" src="./exampletrimmed.jpg" alt="srcimg" ref={imgRef} hidden/>
                         <input
-                            className="file-input file-input-bordered file-input-secondary file-input-sm w-full max-w-xs"
+                            className="file-input file-input-bordered file-input-secondary file-input-xs w-full max-w-xs"
                             type="file"
                             onChange={handleInput}
                         />
                     </div>
                     <div>
-                        <h3 className="font-bold text-2xl text-secondary">Controls</h3>
-                        <Checkboxes
-                            setIsLoading={setIsLoading}
-                            isBilateralFon={isBilateralFon}
-                            setIsBilateralFon={setIsBilateralFon}
-                            isATR={isATR}
-                            setIsATR={setIsATR}
-                            isSTR={isSTR}
-                            setIsSTR={setIsSTR}
-                            isResised={isResised}
-                            setIsResized={setIsResized}
-                            isGreyed={isGreyed}
-                            setIsGreyed={setIsGreyed}
-                            isGausian={isGausian}
-                            setIsGausian={setIsGausian}
-                            isMedian={isMedian}
-                            setIsMedian={setIsMedian}
-                        />
-                        <div className="h-80 overflow-y-scroll">
-                            {isBilateralFon ? (
-                                <BLFinputs BLF={BLF} handleBLFchange={handleBLFchange} />
-                            ) : null}
-                            {isATR ? (
-                                <ATRinputs ATR={ATR} handleATRchange={handleATRchange} />
-                            ) : null}
-                            {isSTR ? (
-                                <STRinputs STR={STR} handleSTRchange={handleSTRchange} />
-                            ) : null}
-                            {isMedian ? (
-                                <Medianinputs median={median} handleMedian={handleMedian} />
-                            ) : null}
-                            {isGausian ? (
-                                <GAUSinputs GAUS={GAUS} handleGAUSchange={handleGAUSchange} />
-                            ) : null}
+                        <div className="flex gap-x-3">
+                            <label
+                                className="flex gap-x-1 items-center  text-secondary"
+                                htmlFor="default-settings"
+                            >
+                                Default
+                                <input
+                                    className="radio radio-secondary radio-xs"
+                                    type="radio"
+                                    name="image-settings"
+                                    id="default-settings"
+                                    value="default-settings"
+                                    checked={isDefaultSettings}
+                                    onChange={() => setIsDefaultSettings(true)}
+                                />
+                            </label>
+                            <label
+                                className="flex gap-x-1 items-center  text-secondary"
+                                htmlFor="advanced-settings"
+                            >
+                                Advanced
+                                <input
+                                    className="radio radio-secondary radio-xs"
+                                    type="radio"
+                                    name="image-settings"
+                                    id="advanced-settings"
+                                    value="advanced-settings"
+                                    checked={!isDefaultSettings}
+                                    onChange={() => setIsDefaultSettings(false)}
+                                />
+                            </label>
                         </div>
                         <div className="flex gap-x-2">
                             <button
@@ -312,9 +336,51 @@ export default function Home() {
                                 type="button"
                                 onClick={handleSave}
                             >
-                                Save
+                                Save Image
                             </button>
                         </div>
+                        {isDefaultSettings ? null : (
+                            <>
+                                <h3 className="font-bold text-2xl text-secondary">Tools</h3>
+                                <Checkboxes
+                                    setIsLoading={setIsLoading}
+                                    isBilateralFon={isBilateralFon}
+                                    setIsBilateralFon={setIsBilateralFon}
+                                    isATR={isATR}
+                                    setIsATR={setIsATR}
+                                    isSTR={isSTR}
+                                    setIsSTR={setIsSTR}
+                                    isResised={isResised}
+                                    setIsResized={setIsResized}
+                                    isGreyed={isGreyed}
+                                    setIsGreyed={setIsGreyed}
+                                    isGausian={isGausian}
+                                    setIsGausian={setIsGausian}
+                                    isMedian={isMedian}
+                                    setIsMedian={setIsMedian}
+                                />
+                                <div className="h-80 overflow-y-scroll">
+                                    {isBilateralFon ? (
+                                        <BLFinputs BLF={BLF} handleBLFchange={handleBLFchange} />
+                                    ) : null}
+                                    {isATR ? (
+                                        <ATRinputs ATR={ATR} handleATRchange={handleATRchange} />
+                                    ) : null}
+                                    {isSTR ? (
+                                        <STRinputs STR={STR} handleSTRchange={handleSTRchange} />
+                                    ) : null}
+                                    {isMedian ? (
+                                        <Medianinputs median={median} handleMedian={handleMedian} />
+                                    ) : null}
+                                    {isGausian ? (
+                                        <GAUSinputs
+                                            GAUS={GAUS}
+                                            handleGAUSchange={handleGAUSchange}
+                                        />
+                                    ) : null}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

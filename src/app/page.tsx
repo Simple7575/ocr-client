@@ -134,6 +134,7 @@ export default function Home() {
             return () => {};
         },
         // prettier-ignore
+        /* eslint-disable-next-line */
         [ isCVready, ATR, STR, BLF, GAUS, isBilateralFon, isResised, isGausian, isMedian, isGreyed, median, isATR, isSTR, img ]
     );
 

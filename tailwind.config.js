@@ -19,6 +19,9 @@ module.exports = {
                 xl: "50px",
             },
         },
+        screens: {
+            smm: { max: "639px" },
+        },
     },
     plugins: [require("daisyui")],
     daisyui: {

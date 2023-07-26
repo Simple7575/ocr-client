@@ -22,11 +22,11 @@ import BLFinputs, { BLFinitial, BLFreducer, BLFtype } from "./(components)/BLFin
 import GAUSinputs, { GAUSinitial, GAUSreducer, GAUSType } from "./(components)/GausInputs";
 import Medianinputs from "./(components)/Median";
 import Checkboxes from "./(components)/Checkboxes";
+import Footer from "./(components)/footer/Footer";
 // types
 import { type ATRType } from "./(components)/ATRinputs";
 
 export default function Home() {
-    const isExecuted = useRef(false);
     const [isPending, startTransition] = useTransition();
     const [text, setText] = useState("");
     const [progress, setProgress] = useState(0);
@@ -34,6 +34,7 @@ export default function Home() {
     // refs
     const srcImgRef = useRef<cv.Mat | undefined>(undefined);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
     // bools
     const [isDefaultSettings, setIsDefaultSettings] = useState(true);
     const [isBilateralFon, setIsBilateralFon] = useState(false);
@@ -52,6 +53,8 @@ export default function Home() {
     const [BLF, BLFdispatch] = useReducer(BLFreducer, BLFinitial);
     const [GAUS, GAUSdispatch] = useReducer(GAUSreducer, GAUSinitial);
     const [median, setMedian] = useState(3);
+    // error
+    const [error, setError] = useState("");
 
     const redraw = () => {
         try {
@@ -190,28 +193,39 @@ export default function Home() {
     };
 
     const handleOCR = async (e: MouseEvent<HTMLButtonElement>) => {
-        setIsTextLoading(true);
+        try {
+            setIsTextLoading(true);
+            setError("OCR");
+            // console.log(require.resolve("..\\tessaract.js\\dist\\worker.min.js"));
+            // textAreaRef.current?.focus();
+            const worker = await createWorker({
+                errorHandler: (err) => {
+                    setError(err);
+                },
+                logger: (message) => {
+                    setProgress(Math.round(message.progress * 100));
+                    setError((pre) => pre + `\n${JSON.stringify(message)}`);
+                },
+            });
 
-        const worker = await createWorker({
-            logger: (message) => {
-                setProgress(Math.round(message.progress * 100));
-            },
-        });
+            setError((pre) => pre + "\nPassed");
+            await worker.loadLanguage("eng");
+            await worker.initialize("eng");
+            await worker.setParameters({
+                tessedit_pageseg_mode: Tesseract.PSM.AUTO_ONLY,
+                tessedit_ocr_engine_mode: Tesseract.OEM.TESSERACT_ONLY,
+                preserve_interword_spaces: "0",
+            });
 
-        await worker.loadLanguage("eng");
-        await worker.initialize("eng");
-        await worker.setParameters({
-            tessedit_pageseg_mode: Tesseract.PSM.AUTO_ONLY,
-            tessedit_ocr_engine_mode: Tesseract.OEM.TESSERACT_ONLY,
-            preserve_interword_spaces: "0",
-            // tessedit_write_images: true,
-        });
+            const res = await worker.recognize(canvasRef.current?.toDataURL()!);
 
-        const res = await worker.recognize(canvasRef.current?.toDataURL()!);
-
-        setText(res.data.text);
-        setIsTextLoading(false);
-        await worker.terminate();
+            setText(res.data.text);
+            setIsTextLoading(false);
+            await worker.terminate();
+        } catch (error) {
+            setError(JSON.stringify(error));
+            console.error(error);
+        }
     };
 
     const handleSave = () => {
@@ -237,10 +251,14 @@ export default function Home() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen pt-9 pb-9">
-            <div className="flex gap-3">
-                <div>
-                    <div className="relative w-w-l min-h-80 border border-secondary-focus">
+        <div className="flex flex-col items-center min-h-screen pt-9 gap-y-2">
+            <header>
+                <h1 className="text-4xl text-secondary">IMAGE TO TEXT</h1>
+            </header>
+            <div className="grid grid-rows-3 gap-x-2 gap-y-2 smm:flex flex-col border-l-2 border-l-neutral border-r-2 border-r-neutral py-2 px-2">
+                <div className="col-start-1 row-span-1">
+                    <div className="relative w-w-l min-h-80 border border-secondary-focus smm:w-80">
+                        {error}
                         <canvas className="max-w-full" ref={canvasRef}></canvas>
                         {isLoading ? (
                             <div className="absolute left-0 top-0 right-0 bottom-0 flex items-center justify-center bg-slate-700/50">
@@ -259,31 +277,8 @@ export default function Home() {
                         value={progress}
                         max="100"
                     ></progress>
-                    <div className="relative">
-                        <textarea
-                            className="textarea relative w-w-l h-80 border border-secondary-focus"
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                        />
-                        <div
-                            className="tooltip tooltip-top absolute right-2 top-2"
-                            data-tip="Copy text"
-                        >
-                            <button
-                                className=" btn btn-ghost btn-xs rounded-sm"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(text);
-                                }}
-                            >
-                                <PiCopySimple color="aqua" />
-                            </button>
-                        </div>
-                        {isTextLoading ? (
-                            <div className="loading loading-ring text-secondary absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-28"></div>
-                        ) : null}
-                    </div>
                 </div>
-                <div>
+                <div className="col-start-2 sm:col-start-1">
                     <div>
                         <input
                             className="file-input file-input-bordered file-input-secondary file-input-xs w-full max-w-xs"
@@ -384,7 +379,32 @@ export default function Home() {
                         )}
                     </div>
                 </div>
+                <div className="relative col-start-1 row-start-2 row-span-3 h-max">
+                    <textarea
+                        ref={textAreaRef}
+                        className="textarea relative w-w-l h-80 border border-secondary-focus smm:w-80"
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                    />
+                    <div
+                        className="tooltip tooltip-top absolute right-2 top-2"
+                        data-tip="Copy text"
+                    >
+                        <button
+                            className=" btn btn-ghost btn-xs rounded-sm"
+                            onClick={() => {
+                                navigator.clipboard.writeText(text);
+                            }}
+                        >
+                            <PiCopySimple color="aqua" />
+                        </button>
+                    </div>
+                    {isTextLoading ? (
+                        <div className="loading loading-ring text-secondary absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-28"></div>
+                    ) : null}
+                </div>
             </div>
+            <Footer />
         </div>
     );
 }

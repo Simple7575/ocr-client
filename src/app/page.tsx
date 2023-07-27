@@ -196,7 +196,7 @@ export default function Home() {
         try {
             setIsTextLoading(true);
             setError("OCR");
-            // console.log(require.resolve("..\\tessaract.js\\dist\\worker.min.js"));
+            // console.log(require.resolve("/worker.min.js"));
             // textAreaRef.current?.focus();
             const worker = await createWorker({
                 errorHandler: (err) => {
@@ -206,6 +206,9 @@ export default function Home() {
                     setProgress(Math.round(message.progress * 100));
                     setError((pre) => pre + `\n${JSON.stringify(message)}`);
                 },
+                corePath: "/core",
+                langPath: "/eng.traineddata",
+                workerPath: "/dist/worker.min.js",
             });
 
             setError((pre) => pre + "\nPassed");

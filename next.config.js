@@ -19,6 +19,10 @@ const nextConfig = {
                         from: "node_modules/tesseract.js/dist",
                         to: path.resolve(__dirname, "public", "dist"),
                     },
+                    {
+                        from: "node_modules/tesseract.js-core",
+                        to: path.resolve(__dirname, "public", "core"),
+                    },
                 ],
             })
             // new CopyPlugin({

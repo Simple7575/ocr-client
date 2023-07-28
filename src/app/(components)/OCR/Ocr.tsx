@@ -203,6 +203,9 @@ export default function Ocr() {
             setIsTextLoading(true);
             // setError("OCR");
             const worker = await createWorker({
+                // tesseract-core-simd.wasm.js:108 failed to asynchronously prepare wasm: RangeError: WebAssembly.instantiate(): Out of memory: wasm memory
+                // tesseract.js RangeError: WebAssembly.instantiate() Out of memory: wasm memory
+                // Uncaught (in promise) RuntimeError: Aborted(RangeError: WebAssembly.instantiate(): Out of memory: wasm memory). Build with -sASSERTIONS for more info.
                 errorHandler: (err) => {
                     console.error(err);
                     // setError(err);
@@ -292,6 +295,7 @@ export default function Ocr() {
                         <input
                             className="file-input file-input-bordered file-input-secondary file-input-xs w-full max-w-xs"
                             type="file"
+                            accept="image/png, image/jpg"
                             onChange={handleInput}
                         />
                     </div>

@@ -202,7 +202,6 @@ export default function Ocr() {
         try {
             setIsTextLoading(true);
             // setError("OCR");
-
             const worker = await createWorker({
                 errorHandler: (err) => {
                     console.error(err);
@@ -212,7 +211,8 @@ export default function Ocr() {
                     setProgress(Math.round(message.progress * 100));
                     // setError((pre) => pre + `\n${JSON.stringify(message)}`);
                 },
-                langPath: "/eng.traineddata",
+                gzip: false,
+                langPath: "lang",
                 corePath: "/core",
                 workerPath: "/dist/worker.min.js",
             });

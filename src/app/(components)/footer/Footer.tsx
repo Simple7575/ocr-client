@@ -11,13 +11,13 @@ export default function Footer() {
             </div>
             <ul className="flex gap-x-5">
                 <li>
-                    <a href="https://github.com/Simple7575/-tinkoff-api-bot-client" target="_blank">
+                    <a href="https://simple-mmg.netlify.app/" target="_blank">
                         <BsGlobeAsiaAustralia size={24} />
                         {/* <Globe /> */}
                     </a>
                 </li>
                 <li>
-                    <a href="https://github.com/Simple7575/-tinkoff-api-bot-client" target="_blank">
+                    <a href="https://github.com/Simple7575/ocr-client" target="_blank">
                         <BsGithub size={24} />
                         {/* <Github /> */}
                     </a>

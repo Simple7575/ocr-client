@@ -25,6 +25,7 @@ import Checkboxes from "../Checkboxes";
 import Footer from "../footer/Footer";
 // types
 import { type ATRType } from "../ATRinputs";
+import axios from "axios";
 
 export default function Ocr() {
     const [isPending, startTransition] = useTransition();
@@ -201,39 +202,42 @@ export default function Ocr() {
     const handleOCR = async (e: MouseEvent<HTMLButtonElement>) => {
         try {
             setIsTextLoading(true);
-            // setError("OCR");
-            const worker = await createWorker({
-                // tesseract-core-simd.wasm.js:108 failed to asynchronously prepare wasm: RangeError: WebAssembly.instantiate(): Out of memory: wasm memory
-                // tesseract.js RangeError: WebAssembly.instantiate() Out of memory: wasm memory
-                // Uncaught (in promise) RuntimeError: Aborted(RangeError: WebAssembly.instantiate(): Out of memory: wasm memory). Build with -sASSERTIONS for more info.
-                errorHandler: (err) => {
-                    console.error(err);
-                    // setError(err);
-                },
-                logger: (message) => {
-                    setProgress(Math.round(message.progress * 100));
-                    // setError((pre) => pre + `\n${JSON.stringify(message)}`);
-                },
-                gzip: false,
-                langPath: "lang",
-                corePath: "/core",
-                workerPath: "/dist/worker.min.js",
-            });
+            // const worker = await createWorker({
+            //     // tesseract-core-simd.wasm.js:108 failed to asynchronously prepare wasm: RangeError: WebAssembly.instantiate(): Out of memory: wasm memory
+            //     // tesseract.js RangeError: WebAssembly.instantiate() Out of memory: wasm memory
+            //     // Uncaught (in promise) RuntimeError: Aborted(RangeError: WebAssembly.instantiate(): Out of memory: wasm memory). Build with -sASSERTIONS for more info.
+            //     errorHandler: (err) => {
+            //         console.error(err);
+            //     },
+            //     logger: (message) => {
+            //         setProgress(Math.round(message.progress * 100));
+            //     },
+            //     gzip: false,
+            //     langPath: "lang",
+            //     corePath: "/core",
+            //     workerPath: "/dist/worker.min.js",
+            // });
 
-            // setError((pre) => pre + "\nPassed");
-            await worker.loadLanguage("eng");
-            await worker.initialize("eng");
-            await worker.setParameters({
-                tessedit_pageseg_mode: Tesseract.PSM.AUTO_ONLY,
-                tessedit_ocr_engine_mode: Tesseract.OEM.TESSERACT_ONLY,
-                preserve_interword_spaces: "0",
-            });
+            // // setError((pre) => pre + "\nPassed");
+            // await worker.loadLanguage("eng");
+            // await worker.initialize("eng");
+            // await worker.setParameters({
+            //     tessedit_pageseg_mode: Tesseract.PSM.AUTO_ONLY,
+            //     tessedit_ocr_engine_mode: Tesseract.OEM.TESSERACT_ONLY,
+            //     preserve_interword_spaces: "0",
+            // });
 
-            const res = await worker.recognize(canvasRef.current?.toDataURL()!);
+            // const res = await worker.recognize(canvasRef.current?.toDataURL()!);
+            const url = process.env.NEXT_PUBLIC_SERVER_BASE;
+            console.log(url);
+
+            const res = await axios.post(`${url}/ocr`, {
+                image: canvasRef.current?.toDataURL()!,
+            });
 
             setText(res.data.text);
             setIsTextLoading(false);
-            await worker.terminate();
+            // await worker.terminate();
         } catch (error) {
             setError(JSON.stringify(error));
             console.error(error);

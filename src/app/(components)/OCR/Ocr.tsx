@@ -11,6 +11,7 @@ import {
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { PiCopySimple } from "react-icons/pi";
 import debounce from "lodash/debounce";
+import { io } from "socket.io-client";
 
 import cv from "@techstark/opencv-js";
 import Tesseract, { createWorker } from "tesseract.js";
@@ -228,8 +229,15 @@ export default function Ocr() {
             // });
 
             // const res = await worker.recognize(canvasRef.current?.toDataURL()!);
+
             const url = process.env.NEXT_PUBLIC_SERVER_BASE;
-            console.log(url);
+            const socket = io(`${url}`, { path: "/io" });
+
+            socket.connect();
+
+            socket.on("loading", (progress) => {
+                setProgress(Math.round(progress.progress * 100));
+            });
 
             const res = await axios.post(`${url}/ocr`, {
                 image: canvasRef.current?.toDataURL()!,
@@ -237,6 +245,7 @@ export default function Ocr() {
 
             setText(res.data.text);
             setIsTextLoading(false);
+            socket.disconnect();
             // await worker.terminate();
         } catch (error) {
             setError(JSON.stringify(error));

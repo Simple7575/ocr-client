@@ -14,6 +14,7 @@ module.exports = {
             },
             width: {
                 "w-l": "45rem",
+                "w-m": "35rem",
             },
             loading: {
                 xl: "50px",
@@ -21,6 +22,9 @@ module.exports = {
         },
         screens: {
             smm: { max: "639px" },
+            mdd: { max: "1018px" },
+            "-smm": { min: "639px" },
+            "-mdd": { min: "1018px" },
         },
     },
     plugins: [require("daisyui")],

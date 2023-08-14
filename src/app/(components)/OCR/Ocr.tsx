@@ -245,6 +245,7 @@ export default function Ocr() {
 
             setText(res.data.text);
             setIsTextLoading(false);
+            textAreaRef.current?.focus();
             socket.disconnect();
             // await worker.terminate();
         } catch (error) {
@@ -281,9 +282,9 @@ export default function Ocr() {
             <header>
                 <h1 className="text-4xl text-secondary mt-4 font-bold">IMAGE TO TEXT</h1>
             </header>
-            <div className="grid gap-x-2 gap-y-2 smm:flex flex-col border-l-2 border-l-neutral border-r-2 border-r-neutral py-2 px-2">
+            <div className="grid gap-x-2 gap-y-2 mdd:flex smm:flex flex-col border-l-2 border-l-neutral border-r-2 border-r-neutral py-2 px-2">
                 <div className="col-start-1 row-span-1">
-                    <div className="relative w-w-l min-h-80 border border-secondary-focus smm:w-80">
+                    <div className="relative min-h-80 border border-secondary-focus -mdd:w-w-l -smm:w-w-m smm:w-80">
                         <canvas className="max-w-full" ref={canvasRef}></canvas>
                         {isLoading ? (
                             <div className="absolute left-0 top-0 right-0 bottom-0 flex items-center justify-center bg-slate-700/50">
@@ -408,7 +409,7 @@ export default function Ocr() {
                 <div className="relative col-start-1 row-start-2 h-max">
                     <textarea
                         ref={textAreaRef}
-                        className="textarea relative w-w-l h-80 border border-secondary-focus smm:w-80"
+                        className="textarea relative w-w-l h-80 border border-secondary-focus -mdd:w-w-l -smm:w-w-m smm:w-80"
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                     />

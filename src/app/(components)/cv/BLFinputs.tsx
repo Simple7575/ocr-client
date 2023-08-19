@@ -1,7 +1,7 @@
 import { DebouncedFunc } from "lodash";
 import { ChangeEvent, Dispatch, SetStateAction, useTransition } from "react";
 //
-import { useTypedDispatch, useTypedSelector } from "../../../hooks/useTypedRedux";
+import { useTypedDispatch, useTypedSelector } from "@/hooks/useTypedRedux";
 import * as BLFActions from "@/redux/slices/inputs/blfSlice";
 
 type Props = {

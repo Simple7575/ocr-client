@@ -1,7 +1,7 @@
 "use client";
-import Ocr from "./(components)/ocr/Ocr";
 import { Provider } from "react-redux";
 //
+import Ocr from "@/app/(components)/ocr/Ocr";
 import { store } from "@/redux/store";
 
 export default function Home() {

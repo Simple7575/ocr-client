@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction } from "react";
 //
-import { useTypedDispatch, useTypedSelector } from "../../../hooks/useTypedRedux";
+import { useTypedDispatch, useTypedSelector } from "@/hooks/useTypedRedux";
 import * as CHKBXActions from "@/redux/slices/checkboxes/chkbxSlice";
 
 interface Props {

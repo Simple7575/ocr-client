@@ -1,40 +1,18 @@
 import { Dispatch, SetStateAction } from "react";
+//
+import { useTypedDispatch, useTypedSelector } from "../../../hooks/useTypedRedux";
+import * as CHKBXActions from "@/redux/slices/checkboxes/chkbxSlice";
 
 interface Props {
     setIsLoading: Dispatch<SetStateAction<boolean>>;
-    isBilateralFon: boolean;
-    setIsBilateralFon: Dispatch<SetStateAction<boolean>>;
-    isATR: boolean;
-    setIsATR: Dispatch<SetStateAction<boolean>>;
-    isSTR: boolean;
-    setIsSTR: Dispatch<SetStateAction<boolean>>;
-    isResised: boolean;
-    setIsResized: Dispatch<SetStateAction<boolean>>;
-    isGreyed: boolean;
-    setIsGreyed: Dispatch<SetStateAction<boolean>>;
-    isGausian: boolean;
-    setIsGausian: Dispatch<SetStateAction<boolean>>;
-    isMedian: boolean;
-    setIsMedian: Dispatch<SetStateAction<boolean>>;
 }
 
-export default function Checkboxes({
-    setIsLoading,
-    isBilateralFon,
-    setIsBilateralFon,
-    isATR,
-    setIsATR,
-    isSTR,
-    setIsSTR,
-    isResised,
-    setIsResized,
-    isGreyed,
-    setIsGreyed,
-    isGausian,
-    setIsGausian,
-    isMedian,
-    setIsMedian,
-}: Props) {
+export default function Checkboxes({ setIsLoading }: Props) {
+    const { isBLF, isATR, isSTR, isResised, isGreyed, isGaus, isMedian } = useTypedSelector(
+        (state) => state.CHKBX
+    );
+    const dispatch = useTypedDispatch();
+
     return (
         <div className="grid grid-cols-2">
             <label htmlFor="isResised" className="flex gap-2">
@@ -46,7 +24,7 @@ export default function Checkboxes({
                     checked={isResised}
                     onChange={() => {
                         setIsLoading(true);
-                        setIsResized(!isResised);
+                        dispatch(CHKBXActions.SetIsResised(!isResised));
                     }}
                 />
                 <span className="text-sm text-neutral-content">Is Resized</span>
@@ -57,11 +35,11 @@ export default function Checkboxes({
                     type="checkbox"
                     name="isGreyed"
                     id="isGreyed"
-                    disabled={isBilateralFon}
+                    disabled={isBLF}
                     checked={isGreyed}
                     onChange={() => {
                         setIsLoading(true);
-                        setIsGreyed(!isGreyed);
+                        dispatch(CHKBXActions.SetIsGreyed(!isGreyed));
                     }}
                 />
                 <span className="text-sm text-neutral-content">Is greyed</span>
@@ -75,7 +53,7 @@ export default function Checkboxes({
                     checked={isATR}
                     onChange={() => {
                         setIsLoading(true);
-                        setIsATR(!isATR);
+                        dispatch(CHKBXActions.SetIsATR(!isATR));
                     }}
                 />
                 <span className="text-sm text-neutral-content">isATR</span>
@@ -89,7 +67,7 @@ export default function Checkboxes({
                     checked={isSTR}
                     onChange={() => {
                         setIsLoading(true);
-                        setIsSTR(!isSTR);
+                        dispatch(CHKBXActions.SetIsSTR(!isSTR));
                     }}
                 />
                 <span className="text-sm text-neutral-content">isSTR</span>
@@ -103,7 +81,7 @@ export default function Checkboxes({
                     checked={isMedian}
                     onChange={() => {
                         setIsLoading(true);
-                        setIsMedian(!isMedian);
+                        dispatch(CHKBXActions.SetIsMedian(!isMedian));
                     }}
                 />
                 <span className="text-sm text-neutral-content">Is Median</span>
@@ -114,10 +92,10 @@ export default function Checkboxes({
                     type="checkbox"
                     name="isBilateralOn"
                     id="isBilateralOn"
-                    checked={isBilateralFon}
+                    checked={isBLF}
                     onChange={() => {
                         setIsLoading(true);
-                        setIsBilateralFon(!isBilateralFon);
+                        dispatch(CHKBXActions.SetIsBLF(!isBLF));
                     }}
                 />
                 <span className="text-sm text-neutral-content">Is Bilateral on</span>
@@ -128,10 +106,10 @@ export default function Checkboxes({
                     type="checkbox"
                     name="isGausian"
                     id="isGausian"
-                    checked={isGausian}
+                    checked={isGaus}
                     onChange={() => {
                         setIsLoading(true);
-                        setIsGausian(!isGausian);
+                        dispatch(CHKBXActions.SetIsGaus(!isGaus));
                     }}
                 />
                 <span className="text-sm text-neutral-content">Is Gausian on</span>

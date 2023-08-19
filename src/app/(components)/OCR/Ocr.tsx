@@ -1,35 +1,24 @@
 "use client";
-import {
-    ChangeEvent,
-    useEffect,
-    useReducer,
-    useRef,
-    useState,
-    useTransition,
-    type MouseEvent,
-} from "react";
+import { ChangeEvent, useEffect, useRef, useState, useTransition, type MouseEvent } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { PiCopySimple } from "react-icons/pi";
-import debounce from "lodash/debounce";
 import { io } from "socket.io-client";
-
+import axios from "axios";
 import cv from "@techstark/opencv-js";
-import Tesseract, { createWorker } from "tesseract.js";
-import { odder } from "@/utils/Odder";
-// ----
-import ATRinputs, { ATRinitial, ATRreducer } from "../ATRinputs";
-import STRinputs, { STRType, STRinitial, STRreducer } from "../STRinputs";
-import BLFinputs, { BLFinitial, BLFreducer, BLFtype } from "../BLFinputs";
-import GAUSinputs, { GAUSinitial, GAUSreducer, GAUSType } from "../GausInputs";
-import Medianinputs from "../Median";
-import Checkboxes from "../Checkboxes";
+// components
+import Canvas from "../canvas/Canvas";
+import ATRinputs from "../cv/ATRinputs";
+import STRinputs from "../cv/STRinputs";
+import BLFinputs from "../cv/BLFinputs";
+import GAUSinputs from "../cv/GausInputs";
+import Medianinputs from "../cv/MedianInputs";
+import Checkboxes from "../cv/Checkboxes";
 import Footer from "../footer/Footer";
 // types
-import { type ATRType } from "../ATRinputs";
-import axios from "axios";
+import { useTypedSelector } from "@/hooks/useTypedRedux";
+import { useRedraw } from "@/hooks/useRedraw";
 
 export default function Ocr() {
-    const [isPending, startTransition] = useTransition();
     const [text, setText] = useState("");
     const [progress, setProgress] = useState(0);
     const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -39,91 +28,12 @@ export default function Ocr() {
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
     // bools
     const [isDefaultSettings, setIsDefaultSettings] = useState(true);
-    const [isBilateralFon, setIsBilateralFon] = useState(false);
-    const [isSTR, setIsSTR] = useState(false);
-    const [isATR, setIsATR] = useState(false);
-    const [isResised, setIsResized] = useState(false);
-    const [isGreyed, setIsGreyed] = useState(false);
-    const [isCVready, setIsCVready] = useState(false);
-    const [isGausian, setIsGausian] = useState(false);
-    const [isMedian, setIsMedian] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isTextLoading, setIsTextLoading] = useState(false);
-    // states
-    const [ATR, ATRdispatch] = useReducer(ATRreducer, ATRinitial);
-    const [STR, STRdispatch] = useReducer(STRreducer, STRinitial);
-    const [BLF, BLFdispatch] = useReducer(BLFreducer, BLFinitial);
-    const [GAUS, GAUSdispatch] = useReducer(GAUSreducer, GAUSinitial);
-    const [median, setMedian] = useState(3);
-    // error
-    const [error, setError] = useState("");
+    // bools
+    const { isBLF, isATR, isSTR, isGaus, isMedian } = useTypedSelector((state) => state.CHKBX);
 
-    const redraw = () => {
-        try {
-            if (srcImgRef.current?.isDeleted()) return;
-            if (isResised) {
-                // const [rw, rh] = CalculateAspRatio(3000, srcImg.cols, srcImg.rows);
-                // let dsize = new cv.Size(rw, rh);
-                // cv.resize(srcImg, srcImg, new cv.Size(0, 0), 5, 5, cv.INTER_CUBIC);
-                // prettier-ignore
-                cv.resize( srcImgRef.current!, srcImgRef.current!, new cv.Size(0, 0), 7, 7, cv.INTER_CUBIC );
-            }
-            if (isGreyed && !isBilateralFon) {
-                cv.cvtColor(srcImgRef.current!, srcImgRef.current!, cv.COLOR_RGBA2GRAY, 0);
-            }
-            if (isBilateralFon) {
-                const dst = new cv.Mat();
-                try {
-                    cv.cvtColor(srcImgRef.current!, dst, cv.COLOR_RGBA2GRAY, 0);
-                    // prettier-ignore
-                    cv.bilateralFilter(dst, srcImgRef.current!, BLF.D, BLF.sigmaColor, BLF.sigmaSpace, BLF.borderType);
-                    dst.delete();
-                } catch (error) {
-                    dst.delete();
-                    console.error(error);
-                }
-            }
-            if (isMedian) {
-                cv.medianBlur(srcImgRef.current!, srcImgRef.current!, median);
-                // cv.medianBlur(srcImgRef.current!, srcImgRef.current!, 3);
-                // cv.medianBlur(srcImgRef.current!, srcImgRef.current!, 11);
-            }
-            if (isGausian) {
-                let ksize = new cv.Size(GAUS.ksize, GAUS.ksize);
-                // prettier-ignore
-                cv.GaussianBlur(srcImgRef.current!, srcImgRef.current!, ksize, GAUS.sigmaX, GAUS.sigmaY, cv.BORDER_DEFAULT);
-            }
-            if (isSTR) {
-                // cv.threshold(srcImgRef.current!, srcImgRef.current!, 162, 255, cv.THRESH_TRUNC);
-                // prettier-ignore
-                cv.threshold( srcImgRef.current!, srcImgRef.current!, STR.thresh, STR.maxValue, STR.thresholdType );
-            }
-            if (isATR) {
-                if (!isGreyed)
-                    cv.cvtColor(srcImgRef.current!, srcImgRef.current!, cv.COLOR_RGBA2GRAY, 0);
-                // prettier-ignore
-                cv.adaptiveThreshold( srcImgRef.current!, srcImgRef.current!, ATR.maxValue, Number(ATR.adaptiveMethod), Number(ATR.thresholdType), Number(ATR.blockSize), ATR.C );
-            }
-            // cv.Canny(srcImgRef.current!, srcImgRef.current!, 200, 50, 7, true);
-
-            cv.imshow(canvasRef.current!, srcImgRef.current!);
-            setIsLoading(false);
-            if (srcImgRef.current && !srcImgRef.current.isDeleted()) srcImgRef.current!.delete();
-        } catch (error) {
-            if (srcImgRef.current && !srcImgRef.current.isDeleted()) srcImgRef.current!.delete();
-            console.error(error);
-        }
-    };
-
-    const debounced = debounce(redraw, 500, {
-        maxWait: 1000,
-        // trailing: false,
-        leading: false,
-    });
-
-    cv["onRuntimeInitialized"] = () => {
-        setIsCVready(true);
-    };
+    const debouncedRedraw = useRedraw({ srcImgRef, canvasRef, setIsLoading });
 
     useEffect(() => {
         const globalLoading = document.getElementById("global-loading");
@@ -131,104 +41,9 @@ export default function Ocr() {
         globalLoading.style.display = "none";
     }, []);
 
-    useEffect(
-        () => {
-            if (!isCVready) return;
-            if (!img) return;
-
-            if (!srcImgRef.current || srcImgRef.current.isDeleted()) {
-                srcImgRef.current = cv.imread(img);
-            }
-
-            debounced();
-
-            return () => {};
-        },
-        // prettier-ignore
-        /* eslint-disable-next-line */
-        [ isCVready, ATR, STR, BLF, GAUS, isBilateralFon, isResised, isGausian, isMedian, isGreyed, median, isATR, isSTR, img ]
-    );
-
-    const handleATRchange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
-        debounced.cancel();
-        setIsLoading(true);
-        const payload = Number(e.target.value);
-        const type = e.target.name.split("-")[1] as keyof ATRType;
-        startTransition(() => {
-            ATRdispatch({ type, payload });
-        });
-    };
-
-    const handleSTRchange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
-        debounced.cancel();
-        setIsLoading(true);
-        const payload = Number(e.target.value);
-        const type = e.target.name.split("-")[1] as keyof STRType;
-        startTransition(() => {
-            STRdispatch({ type, payload });
-        });
-    };
-
-    const handleBLFchange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
-        debounced.cancel();
-        setIsLoading(true);
-        const payload = Number(e.target.value);
-        const type = e.target.name.split("-")[1] as keyof BLFtype;
-        startTransition(() => {
-            BLFdispatch({ type, payload });
-        });
-    };
-
-    const handleGAUSchange = (
-        e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>
-    ) => {
-        debounced.cancel();
-        setIsLoading(true);
-        const payload = Number(e.target.value);
-        const type = e.target.name.split("-")[1] as keyof GAUSType;
-        startTransition(() => {
-            GAUSdispatch({ type, payload });
-        });
-    };
-
-    const handleMedian = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
-        debounced.cancel();
-        setIsLoading(true);
-        const payload = Number(e.target.value);
-        startTransition(() => {
-            setMedian((pre) => odder(pre, payload));
-        });
-    };
-
     const handleOCR = async (e: MouseEvent<HTMLButtonElement>) => {
         try {
             setIsTextLoading(true);
-            // const worker = await createWorker({
-            //     // tesseract-core-simd.wasm.js:108 failed to asynchronously prepare wasm: RangeError: WebAssembly.instantiate(): Out of memory: wasm memory
-            //     // tesseract.js RangeError: WebAssembly.instantiate() Out of memory: wasm memory
-            //     // Uncaught (in promise) RuntimeError: Aborted(RangeError: WebAssembly.instantiate(): Out of memory: wasm memory). Build with -sASSERTIONS for more info.
-            //     errorHandler: (err) => {
-            //         console.error(err);
-            //     },
-            //     logger: (message) => {
-            //         setProgress(Math.round(message.progress * 100));
-            //     },
-            //     gzip: false,
-            //     langPath: "lang",
-            //     corePath: "/core",
-            //     workerPath: "/dist/worker.min.js",
-            // });
-
-            // // setError((pre) => pre + "\nPassed");
-            // await worker.loadLanguage("eng");
-            // await worker.initialize("eng");
-            // await worker.setParameters({
-            //     tessedit_pageseg_mode: Tesseract.PSM.AUTO_ONLY,
-            //     tessedit_ocr_engine_mode: Tesseract.OEM.TESSERACT_ONLY,
-            //     preserve_interword_spaces: "0",
-            // });
-
-            // const res = await worker.recognize(canvasRef.current?.toDataURL()!);
 
             const url = process.env.NEXT_PUBLIC_SERVER_BASE;
             const socket = io(`${url}`, { path: "/io" });
@@ -247,9 +62,7 @@ export default function Ocr() {
             setIsTextLoading(false);
             textAreaRef.current?.focus();
             socket.disconnect();
-            // await worker.terminate();
         } catch (error) {
-            setError(JSON.stringify(error));
             console.error(error);
         }
     };
@@ -285,7 +98,12 @@ export default function Ocr() {
             <div className="grid gap-x-2 gap-y-2 mdd:flex smm:flex flex-col border-l-2 border-l-neutral border-r-2 border-r-neutral py-2 px-2">
                 <div className="col-start-1 row-span-1">
                     <div className="relative min-h-80 border border-secondary-focus -mdd:w-w-l -smm:w-w-m smm:w-80">
-                        <canvas className="max-w-full" ref={canvasRef}></canvas>
+                        <Canvas
+                            canvasRef={canvasRef}
+                            srcImgRef={srcImgRef}
+                            img={img}
+                            setIsLoading={setIsLoading}
+                        />
                         {isLoading ? (
                             <div className="absolute left-0 top-0 right-0 bottom-0 flex items-center justify-center bg-slate-700/50">
                                 <div>
@@ -365,40 +183,36 @@ export default function Ocr() {
                         {isDefaultSettings ? null : (
                             <>
                                 <h3 className="font-bold text-2xl text-secondary">Tools</h3>
-                                <Checkboxes
-                                    setIsLoading={setIsLoading}
-                                    isBilateralFon={isBilateralFon}
-                                    setIsBilateralFon={setIsBilateralFon}
-                                    isATR={isATR}
-                                    setIsATR={setIsATR}
-                                    isSTR={isSTR}
-                                    setIsSTR={setIsSTR}
-                                    isResised={isResised}
-                                    setIsResized={setIsResized}
-                                    isGreyed={isGreyed}
-                                    setIsGreyed={setIsGreyed}
-                                    isGausian={isGausian}
-                                    setIsGausian={setIsGausian}
-                                    isMedian={isMedian}
-                                    setIsMedian={setIsMedian}
-                                />
+                                <Checkboxes setIsLoading={setIsLoading} />
                                 <div className="h-80 overflow-y-scroll">
-                                    {isBilateralFon ? (
-                                        <BLFinputs BLF={BLF} handleBLFchange={handleBLFchange} />
+                                    {isBLF ? (
+                                        <BLFinputs
+                                            debouncedRedraw={debouncedRedraw}
+                                            setIsLoading={setIsLoading}
+                                        />
                                     ) : null}
                                     {isATR ? (
-                                        <ATRinputs ATR={ATR} handleATRchange={handleATRchange} />
+                                        <ATRinputs
+                                            debouncedRedraw={debouncedRedraw}
+                                            setIsLoading={setIsLoading}
+                                        />
                                     ) : null}
                                     {isSTR ? (
-                                        <STRinputs STR={STR} handleSTRchange={handleSTRchange} />
+                                        <STRinputs
+                                            debouncedRedraw={debouncedRedraw}
+                                            setIsLoading={setIsLoading}
+                                        />
                                     ) : null}
                                     {isMedian ? (
-                                        <Medianinputs median={median} handleMedian={handleMedian} />
+                                        <Medianinputs
+                                            debouncedRedraw={debouncedRedraw}
+                                            setIsLoading={setIsLoading}
+                                        />
                                     ) : null}
-                                    {isGausian ? (
+                                    {isGaus ? (
                                         <GAUSinputs
-                                            GAUS={GAUS}
-                                            handleGAUSchange={handleGAUSchange}
+                                            debouncedRedraw={debouncedRedraw}
+                                            setIsLoading={setIsLoading}
                                         />
                                     ) : null}
                                 </div>

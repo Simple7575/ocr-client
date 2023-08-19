@@ -1,48 +1,30 @@
-import { ChangeEvent } from "react";
+import { DebouncedFunc } from "lodash";
+import { ChangeEvent, Dispatch, SetStateAction, useTransition } from "react";
+//
+import { useTypedDispatch, useTypedSelector } from "../../../hooks/useTypedRedux";
+import * as BLFActions from "@/redux/slices/inputs/blfSlice";
 
-export type BLFtype = {
-    D: number;
-    sigmaColor: number;
-    sigmaSpace: number;
-    borderType: any;
+type Props = {
+    debouncedRedraw: DebouncedFunc<() => void>;
+    setIsLoading: Dispatch<SetStateAction<boolean>>;
 };
 
-export const BLFinitial = {
-    D: 9,
-    sigmaColor: 75,
-    sigmaSpace: 75,
-    borderType: 0,
-};
+export default function BLFinputs({ debouncedRedraw, setIsLoading }: Props) {
+    const [isPending, startTransition] = useTransition();
 
-export type BLFaction =
-    | { type: "D"; payload: number }
-    | { type: "sigmaColor"; payload: number }
-    | { type: "sigmaSpace"; payload: number }
-    | { type: "borderType"; payload: number };
+    const BLF = useTypedSelector((state) => state.BLF);
+    const dispatch = useTypedDispatch();
 
-export const BLFreducer = (state: BLFtype, action: BLFaction) => {
-    switch (action.type) {
-        case "D":
-            return { ...state, D: Number(action.payload) };
-        case "sigmaColor":
-            return { ...state, sigmaColor: Number(action.payload) };
-        case "sigmaSpace":
-            return { ...state, sigmaSpace: Number(action.payload) };
-        case "borderType":
-            console.log(action.payload);
-            return { ...state, borderType: Number(action.payload) };
-        default:
-            return state;
-            break;
-    }
-};
+    const handleBLFchange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
+        debouncedRedraw.cancel();
+        setIsLoading(true);
+        const payload = Number(e.target.value);
+        const type = `Set${e.target.name.split("-")[1]}` as keyof BLFActions.TBLFActionTypes;
+        startTransition(() => {
+            dispatch(BLFActions[type](payload));
+        });
+    };
 
-interface Props {
-    BLF: BLFtype;
-    handleBLFchange: (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => void;
-}
-
-export default function BLFinputs({ BLF, handleBLFchange }: Props) {
     return (
         <div className="flex flex-col w-64 border border-secondary-focus p-2">
             <strong>BLF</strong>
@@ -59,42 +41,42 @@ export default function BLFinputs({ BLF, handleBLFchange }: Props) {
                     onChange={handleBLFchange}
                 />
             </label>
-            <label className="flex flex-col" htmlFor="BLF-sigmaColor">
+            <label className="flex flex-col" htmlFor="BLF-SigmaColor">
                 <span className="text-sm text-neutral-content">
                     {`Sigma Color: ${BLF.sigmaColor}`}
                 </span>
                 <input
                     className="range range-secondary range-xs"
                     type="range"
-                    name="BLF-sigmaColor"
-                    id="BLF-sigmaColor"
+                    name="BLF-SigmaColor"
+                    id="BLF-SigmaColor"
                     min={0}
                     max={255}
                     value={BLF.sigmaColor}
                     onChange={handleBLFchange}
                 />
             </label>
-            <label className="flex flex-col" htmlFor="BLF-sigmaSpace">
+            <label className="flex flex-col" htmlFor="BLF-SigmaSpace">
                 <span className="text-sm text-neutral-content">
                     {`Sigma Space: ${BLF.sigmaSpace}`}
                 </span>
                 <input
                     className="range range-secondary range-xs"
                     type="range"
-                    name="BLF-sigmaSpace"
-                    id="BLF-sigmaSpace"
+                    name="BLF-SigmaSpace"
+                    id="BLF-SigmaSpace"
                     min={0}
                     max={255}
                     value={BLF.sigmaSpace}
                     onChange={handleBLFchange}
                 />
             </label>
-            <label className="flex flex-col" htmlFor="BLF-borderType">
+            <label className="flex flex-col" htmlFor="BLF-BorderType">
                 <span className="text-sm text-neutral-content">{`Border type: ${BLF.borderType}`}</span>
                 <select
                     className="select select-xs select-secondary w-full max-w-xs"
-                    name="BLF-borderType"
-                    id="BLF-borderType"
+                    name="BLF-BorderType"
+                    id="BLF-BorderType"
                     value={BLF.borderType}
                     onChange={handleBLFchange}
                 >

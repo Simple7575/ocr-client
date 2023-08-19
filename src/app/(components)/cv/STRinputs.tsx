@@ -1,76 +1,65 @@
-import { ChangeEvent } from "react";
+import { DebouncedFunc } from "lodash";
+import { ChangeEvent, Dispatch, SetStateAction, useTransition } from "react";
+//
+import { useTypedDispatch, useTypedSelector } from "../../../hooks/useTypedRedux";
+import * as STRActions from "@/redux/slices/inputs/strSlice";
 
-export type STRType = {
-    thresh: number;
-    maxValue: number;
-    thresholdType: number;
+type Props = {
+    debouncedRedraw: DebouncedFunc<() => void>;
+    setIsLoading: Dispatch<SetStateAction<boolean>>;
 };
 
-export const STRinitial = {
-    thresh: 0,
-    maxValue: 0,
-    thresholdType: 0,
-} as STRType;
+export default function STRinputs({ debouncedRedraw, setIsLoading }: Props) {
+    const [isPending, startTransition] = useTransition();
 
-export type STRaction =
-    | { type: "thresh"; payload: number }
-    | { type: "maxValue"; payload: number }
-    | { type: "thresholdType"; payload: number };
+    const STR = useTypedSelector((state) => state.STR);
+    const dispatch = useTypedDispatch();
 
-export const STRreducer = (state: STRType, action: STRaction) => {
-    switch (action.type) {
-        case "thresh":
-            return { ...state, thresh: Number(action.payload) };
-        case "maxValue":
-            return { ...state, maxValue: Number(action.payload) };
-        case "thresholdType":
-            return { ...state, thresholdType: Number(action.payload) };
-        default:
-            return state;
-    }
-};
+    const handleSTRchange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
+        debouncedRedraw.cancel();
+        setIsLoading(true);
+        const payload = Number(e.target.value);
+        const type = `Set${e.target.name.split("-")[1]}` as keyof STRActions.TSTRActionTypes;
+        startTransition(() => {
+            dispatch(STRActions[type](payload));
+        });
+    };
 
-interface Props {
-    STR: STRType;
-    handleSTRchange: (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => void;
-}
-
-export default function STRinputs({ STR, handleSTRchange }: Props) {
     return (
         <div className="flex flex-col w-64 border border-secondary-focus p-2">
             <strong>STR</strong>
-            <label className="flex flex-col" htmlFor="STR-thresh">
+            <label className="flex flex-col" htmlFor="STR-Thresh">
                 <span className="text-sm text-neutral-content">{`Thresh: ${STR.thresh}`}</span>
                 <input
                     className="range range-secondary range-xs"
                     type="range"
-                    name="STR-thresh"
-                    id="STR-thresh"
+                    name="STR-Thresh"
+                    id="STR-Thresh"
                     min={0}
                     max={255}
                     value={STR.thresh}
                     onChange={handleSTRchange}
                 />
             </label>
-            <label className="flex flex-col" htmlFor="STR-maxValue">
+            <label className="flex flex-col" htmlFor="STR-MaxValue">
                 <span className="text-sm text-neutral-content">{`Max Value: ${STR.maxValue}`}</span>
                 <input
                     className="range range-secondary range-xs"
                     type="range"
-                    name="STR-maxValue"
-                    id="STR-maxValue"
+                    name="STR-MaxValue"
+                    id="STR-MaxValue"
                     min={0}
                     max={255}
                     value={STR.maxValue}
                     onChange={handleSTRchange}
                 />
             </label>
-            <label className="flex flex-col" htmlFor="STR-thresholdType">
+            <label className="flex flex-col" htmlFor="STR-ThresholdType">
                 <span className="text-sm text-neutral-content">{`Threshold Type: ${STR.thresholdType}`}</span>
                 <select
                     className="select select-xs select-secondary w-full max-w-xs"
-                    name="STR-thresholdType"
-                    id="STR-thresholdType"
+                    name="STR-ThresholdType"
+                    id="STR-ThresholdType"
                     value={STR.thresholdType}
                     onChange={handleSTRchange}
                 >

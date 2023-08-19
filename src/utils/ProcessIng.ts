@@ -1,6 +1,6 @@
 import cv from "@techstark/opencv-js";
 // types
-import { type ATRType } from "@/app/(components)/ATRinputs";
+import { type ATRType } from "@/app/(components)/cv/ATRinputs";
 import { type BLFtype } from "@/app/(components)/BLFinputs";
 import { type STRType } from "@/app/(components)/STRinputs";
 
